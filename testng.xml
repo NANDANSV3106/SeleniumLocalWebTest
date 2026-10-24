@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org">
+<suite name="Selenium Test Suite">
+    <test name="Local Selenium Tests">
+        <classes>
+            <!-- Explicitly calls your class sitting in the default package -->
+            <class name="LocalLoginTest"/>
+        </classes>
+    </test>
+</suite>
