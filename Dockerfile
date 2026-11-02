@@ -16,10 +16,9 @@ RUN mvn test-compile -B
 FROM eclipse-temurin:17-jre-jammy AS runtime
 WORKDIR /app
 
-# Install stable browser dependencies and official Google Chrome (stable)
+# Install stable browser dependencies and download/install official Google Chrome directly
 RUN apt-get update && apt-get install -y \
     wget \
-    gnupg \
     curl \
     unzip \
     libglib2.0-0 \
@@ -28,10 +27,10 @@ RUN apt-get update && apt-get install -y \
     libfontconfig1 \
     ca-certificates \
     fonts-liberation \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl -fsSL https://google.com | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-signing-keyring.gpg] http://google.com stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get install -y google-chrome-stable \
+    xdg-utils \
+    && wget -q https://google.com \
+    && apt-get install -y ./google-chrome-stable_current_amd64.deb \
+    && rm google-chrome-stable_current_amd64.deb \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy compiled classes and target folder from the build stage
