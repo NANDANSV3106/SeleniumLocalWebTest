@@ -1,43 +1,19 @@
-# Step 1: Use an official Maven image with JDK 17 to build and bundle the app
-FROM maven:3.9.6-eclipse-temurin-17 AS build
+FROM selenium/standalone-chrome:4.8.3-20230328 AS base
+
+USER root
+
+# Install Maven dependency components cleanly
+RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy the build configuration and source code
+# Copy the build configuration file and test suite XML file
 COPY pom.xml .
-COPY src ./src
+COPY testng.xml .
 
-# Pre-fetch dependencies to speed up subsequent image builds
-RUN mvn dependency:go-offline -B
+# Copy your source code and the correct local HTML web page directory
+COPY src/ ./src/
+COPY webpage/ ./webpage/
 
-# Package the application tests without executing them during image compilation
-RUN mvn test-compile -B
-
-# Step 2: Use a verified runtime image containing Chrome for headless execution
-FROM eclipse-temurin:17-jre-jammy AS runtime
-WORKDIR /app
-
-# Install stable browser dependencies and download/install official Google Chrome directly
-RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
-    unzip \
-    libglib2.0-0 \
-    libnss3 \
-    libgconf-2-4 \
-    libfontconfig1 \
-    ca-certificates \
-    fonts-liberation \
-    xdg-utils \
-    && wget -q https://google.com \
-    && apt-get install -y ./google-chrome-stable_current_amd64.deb \
-    && rm google-chrome-stable_current_amd64.deb \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy compiled classes and target folder from the build stage
-COPY --from=build /app/target /app/target
-
-# Set environment variable to target the internal Chrome binary
-ENV CHROME_BIN=/usr/bin/google-chrome-stable
-
-# Default command to run the TestNG tests inside the container
-CMD ["mvn", "test"]
+# Default execution entrypoint command
+CMD ["mvn", "clean", "test", "-DsuiteXmlFile=testng.xml"]
