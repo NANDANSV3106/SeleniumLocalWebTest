@@ -56,5 +56,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/SeleniumLocalWebTest:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/SeleniumLocalWebTest:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/seleniumlocalwebtest:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/seleniumlocalwebtest:${{ github.sha }}
