@@ -1,24 +1,20 @@
-# =========================================================================
-# Step 1: Use a verified Maven image with Temurin JDK 17 to compile the app
-# =========================================================================
+# Step 1: Use a verified Maven image with JDK 17 to bundle the application
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy the build configuration first to maximize layer caching efficiency
+# Copy the build configuration first so Maven can cache dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy the complete application source code and compile the tests
+# Copy source and compile the project
 COPY src ./src
 RUN mvn test-compile -B
 
-# =========================================================================
-# Step 2: Use an official Temurin JRE runtime layer to set up Chrome
-# =========================================================================
+# Step 2: Use a verified runtime image containing Chrome for headless execution
 FROM eclipse-temurin:17-jre-jammy AS runtime
 WORKDIR /app
 
-# Install baseline Linux browser dependencies and the official stable Google Chrome
+# Install stable browser dependencies and Google Chrome (stable)
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -36,11 +32,11 @@ RUN apt-get update && apt-get install -y \
     && apt-get update && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
-# Extract the fully built target folder containing compiled classes from Step 1
-COPY --from=build /app /app
+# Copy only the built application assets from the build stage
+COPY --from=build /app/target /app/target
 
-# Point the binary configuration explicitly to the newly added Google Chrome binary
+# Set the environment variable to target the newly installed Google Chrome binary
 ENV CHROME_BIN=/usr/bin/google-chrome-stable
 
-# Default execution trigger to fire up the automated test lifecycle inside the container
+# Default command to run the TestNG tests inside the container environment
 CMD ["mvn", "test"]
