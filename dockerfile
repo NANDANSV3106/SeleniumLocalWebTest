@@ -1,20 +1,22 @@
-# Step 1: Use a verified Maven image with JDK 17 to bundle the application
+# Step 1: Use an official Maven image with JDK 17 to build and bundle the app
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy the build configuration first so Maven can cache dependencies
+# Copy the build configuration and source code
 COPY pom.xml .
+COPY src ./src
+
+# Pre-fetch dependencies to speed up subsequent image builds
 RUN mvn dependency:go-offline -B
 
-# Copy source and compile the project
-COPY src ./src
+# Package the application tests without executing them during image compilation
 RUN mvn test-compile -B
 
 # Step 2: Use a verified runtime image containing Chrome for headless execution
 FROM eclipse-temurin:17-jre-jammy AS runtime
 WORKDIR /app
 
-# Install stable browser dependencies and Google Chrome (stable)
+# Install stable browser dependencies and official Google Chrome (stable)
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -32,11 +34,11 @@ RUN apt-get update && apt-get install -y \
     && apt-get update && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only the built application assets from the build stage
+# Copy compiled classes and target folder from the build stage
 COPY --from=build /app/target /app/target
 
-# Set the environment variable to target the newly installed Google Chrome binary
+# Set environment variable to target the internal Chrome binary
 ENV CHROME_BIN=/usr/bin/google-chrome-stable
 
-# Default command to run the TestNG tests inside the container environment
+# Default command to run the TestNG tests inside the container
 CMD ["mvn", "test"]
